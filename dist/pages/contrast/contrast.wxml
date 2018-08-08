@@ -1,0 +1,25 @@
+
+  <view class="container">
+      <view class="main">
+        <view class="circle">
+          <view class="tt">相似度</view>
+          <view class="num">{{score}}</view>
+        </view> 
+        <view class="face-box" bindtap="upload" data-index="left">
+          <image  wx:if="{{!base64.left}}" class="upload" mode="aspectFit" src="../../sources/img/uploadfile.png"/>
+          <image  wx:else class="faceimg" mode="aspectFill" src="{{src.left}}"/>
+          <view class="cover" wx:if="{{load.left}}"><view class="loading"/><view class="desc">图片上传中</view></view>
+          <view class="line" wx:if="{{isAnimation}}"/>
+
+        </view>
+        <view class="face-box" bindtap="upload" data-index="right">
+          <image wx:if="{{!base64.right}}" class="upload" mode="aspectFit" src="../../sources/img/uploadfile.png"/>
+          <image wx:else class="faceimg" mode="aspectFill" src="{{src.right}}"/>
+          <view class="cover" wx:if="{{load.right}}"><view class="loading"/><view class="desc">图片上传中</view></view>
+          <view class="line" wx:if="{{isAnimation}}"/>
+
+        </view>
+
+        <button class="big-btn" bindtap="check">点击这里开始检测</button>
+      </view> 
+  </view>

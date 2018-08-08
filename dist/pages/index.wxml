@@ -1,0 +1,11 @@
+
+  <view class="container">
+    <view class="box">
+      <view class="title">选择一张照片，检测你的性别，年龄，颜值</view>
+      <image class="list" mode="aspectFill" src="../sources/img/recog.png" bindtap="toPage" data-path="/pages/recog/recog" data-wpytopage-a=""/>
+    </view>
+    <view class="box">
+      <view class="title">选择两张照片，检测相似度</view>
+      <image class="list" mode="aspectFill" src="../sources/img/compare.png" bindtap="toPage" data-path="/pages/contrast/contrast" data-wpytopage-a=""/>
+    </view>
+  </view>

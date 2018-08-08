@@ -1,0 +1,13 @@
+{
+  "description": "人脸识别小程序",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "postcss": false,
+    "minified": false
+  },
+  "compileType": "miniprogram",
+  "appid": "wx4bc1a2de5e2c2122",
+  "projectname": "icare-face",
+  "miniprogramRoot": "./dist"
+}

@@ -1,0 +1,28 @@
+
+  <view class="container">
+      <view class="main">
+        <button class="big-btn" bindtap="check">选取一张照片开始识别</button>
+        <view class="bgbox top20">
+          <image src="{{src}}" style="width: {{canvas.width}}px; height: {{canvas.height}}px;"/>
+          <view class="relative" style="width: {{canvas.width}}px; height: {{canvas.height}}px;">
+              <view class="recogbox"  wx:for="{{faceData.face_list}}" style="left:{{item.iloc.boxl}}px;top:{{item.iloc.boxt}}px;width:{{item.iloc.boxw}}px;height:{{item.iloc.boxh}}px;transform:rotate({{item.location.rotation}}deg);transform-origin:0% 0%"/>
+          </view>
+          <view class="line"  wx:if="{{isAnimation}}"/>
+
+        </view>
+
+        <view class="top20 bottom20" wx:if="{{faceData.face_list.length>0}}">
+          <view>共检测到{{faceData.face_num || 0}}张人脸</view>
+          <view wx:for="{{faceData.face_list}}" class="face_li clearfix">
+            <view class="imgbox" style="width:100px;height:100px">
+              <image class="img" src="{{src}}" style="transform: rotate({{item.iloc.rotation}}deg);transform-origin: {{item.iloc.left}}px {{item.iloc.top}}px;left: -{{item.iloc.left}}px;top:-{{item.iloc.top}}px;width:{{item.iloc.w}}px;height:{{item.iloc.h}}px"/>
+            </view>
+            <view class="cont">
+              <view>性别：{{item.gender.type == 'female' ? '女性' : '男性' }}</view>
+              <view>年龄：{{item.age}}</view>
+              <view>颜值：{{item.beauty}}</view>
+            </view>
+          </view>
+        </view> 
+      </view> 
+  </view>

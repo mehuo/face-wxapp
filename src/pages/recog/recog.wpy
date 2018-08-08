@@ -1,0 +1,307 @@
+<style lang="less">
+  .main{
+    width:300px;
+  }
+  .main .big-btn{
+    width:100%;
+    background:#4c8cfe;
+    color:#fff;
+    margin-top:20px;
+  }
+  .relative{
+    position:relative
+  }
+  .absolute{
+    position:absolute
+  }
+  .clearfix:after {
+     content:""; 
+     display: block; 
+     clear:both; 
+  }
+  .face_li{
+    margin-top:20px;
+    background:#efefef;
+    padding:4px 4px;
+    border-radius:4px;
+    position: relative;
+  }
+  .face_li .cont{
+    float:left;
+    padding:4px 10px;
+    font-size : 12px;
+    line-height:20px;
+  }
+  .top20{
+    margin-top:20px;
+  }
+  .bottom20{
+    margin-bottom:20px
+  }
+  .bgbox{
+    position:relative;
+  }
+  .bgbox image{
+    position:absolute;
+  }
+  .bgbox .line{
+    animation: myScan 1s infinite alternate;
+    width:100%;
+    height:2px;
+    background : #4c8cfe;
+    box-shadow : 0px 2px 3px #4c8cfe;
+    position:absolute;
+  }
+  .bgbox .recogbox{
+    border:solid 1px red;
+    box-sizing:border-box;
+    position:absolute;
+  }
+  .imgbox{
+    position: relative;
+    overflow: hidden;
+    float:left;
+  }
+  .imgbox .img{
+    position: absolute;
+  }
+  @keyframes  myScan{
+      from { top:0px; }
+      to { top: 98%; }
+  }
+</style>
+<template>
+  <view class="container">
+      <view class="main">
+        <button class="big-btn" @tap="check">选取一张照片开始识别</button>
+        <view class="bgbox top20">
+          <image src="{{src}}" style="width: {{canvas.width}}px; height: {{canvas.height}}px;" ></image>
+          <view class="relative" style="width: {{canvas.width}}px; height: {{canvas.height}}px;">
+              <view class="recogbox" wx:for="{{faceData.face_list}}" style="left:{{item.iloc.boxl}}px;top:{{item.iloc.boxt}}px;width:{{item.iloc.boxw}}px;height:{{item.iloc.boxh}}px;transform:rotate({{item.location.rotation}}deg);transform-origin:0% 0%"></view>
+          </view>
+          <view class="line" wx:if="{{isAnimation}}"></view>
+
+        </view>
+
+        <view class="top20 bottom20" wx:if="{{faceData.face_list.length>0}}">
+          <view>共检测到{{faceData.face_num || 0}}张人脸</view>
+          <view wx:for="{{faceData.face_list}}" class="face_li clearfix">
+            <view class="imgbox" style="width:100px;height:100px">
+              <image class="img" src="{{src}}" style="transform: rotate({{item.iloc.rotation}}deg);transform-origin: {{item.iloc.left}}px {{item.iloc.top}}px;left: -{{item.iloc.left}}px;top:-{{item.iloc.top}}px;width:{{item.iloc.w}}px;height:{{item.iloc.h}}px"></image>
+            </view>
+            <view class="cont">
+              <view>性别：{{item.gender.type == 'female' ? '女性' : '男性' }}</view>
+              <view>年龄：{{item.age}}</view>
+              <view>颜值：{{item.beauty}}</view>
+            </view>
+          </view>
+        </view> 
+      </view> 
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { connect } from 'wepy-redux'
+  import upng from 'upng-js'
+  import Config from '@/config'
+
+  import api from '@/utils/api'
+  import tools from '@/utils/tools'
+  import dialogs from '@/utils/dialogs'
+
+  export default class Index extends wepy.page {
+    config = {
+        "navigationBarTitleText": "人脸识别"
+    }
+    data = {
+      src : '',
+      canvas_bg : null,
+      canvas_iloc : null,
+      canvas:{
+        proportion:'',
+        width : '',
+        height: ''
+      },
+      faceData:{
+        face_num : 0,
+        face_list : []
+      },
+      isAnimation:false
+    }
+    onLoad(){
+      // this.canvas_bg = wx.createCanvasContext('bgCanvas')
+      // this.canvas_iloc = wx.createCanvasContext('ilocCanvas')
+    }
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        console.log(res.target)
+      }
+      return {
+        title: '快来看看你的真实年龄吧！',
+        path: '/pages/index',
+        imageUrl : Config.shareimg
+      }
+    }
+    check(){
+      let that = this;
+      //重置页面数据
+      this.faceData.face_num = 0;
+      this.faceData.face_list = [];
+      this.$apply();
+      this.setData({
+        'faceData.face_num':0,
+        'faceData.face_list':[]
+      })
+
+      wx.chooseImage({
+        count:1,
+        sizeType: ['original', 'compressed'], // original 原图，compressed 压缩图，默认二者都有
+        sourceType: ['album', 'camera'],
+        success: res => {
+          that.src = res.tempFilePaths[0];
+          wx.getImageInfo({
+            src : that.src,
+            success:function(res){
+              console.log(res);
+              that.imageLoad(res); //绘制识别背景图
+              
+              // that.fakeData();
+
+              that.isAnimation = true;
+              that.setData({
+                isAnimation : true
+              })
+              // wx.showLoading({
+              //   title:'努力识别中'
+              // })
+              wx.uploadFile({  
+                url: Config.apiBaseURL + '/uploadFile', 
+                filePath: that.src,  
+                name: 'file',  
+                formData:{  
+                  'index': tools._shuffUUID(8),
+                },  
+                success: function(res){  
+                  console.log(res);
+                  var data = JSON.parse(res.data);  
+                  if(data.result){
+                    that.buildData(data.result);
+                  }else{
+                    that.showErrMsg(data.error_msg)
+                  }
+                  // wx.hideLoading();
+                  that.isAnimation = false;
+                  that.setData({
+                    isAnimation : false
+                  })
+                },
+                fail : function(e){
+                  // wx.hideLoading();
+                  that.showErrMsg(e.errMsg)
+                  that.isAnimation = false;
+                  that.setData({
+                    isAnimation : false
+                  })
+                }
+              })  
+            }
+          })
+        }
+      })
+    }
+
+    //绘制识别区域和识别内容
+    buildData(data){
+      let that = this;
+      let rate = this.canvas.proportion;
+      data.face_list.forEach(function(value,key){
+        value.color = tools._shuffCOLOR();  
+        value.beauty = Number(value.beauty.toFixed(2))
+        let wrate = 100 / value.location.width;
+        let hrate = 100 / value.location.height;
+        let iloc = {
+          w : that.canvas.owidth * wrate,
+          h : that.canvas.oheight * hrate,
+          left : value.location.left * wrate,
+          top : value.location.top * hrate,
+          rotation : -(value.location.rotation),
+          boxl : value.location.left*rate,
+          boxt : value.location.top*rate,
+          boxw : value.location.width*rate,
+          boxh : value.location.height*rate,
+        } 
+        value.iloc = iloc;     
+      })
+      let context = this.canvas_iloc;
+      let context_bg = this.canvas_bg;
+
+
+      this.faceData.face_num = data.face_num;
+      this.faceData.face_list = data.face_list;
+      this.setData({
+        'faceData.face_num':data.face_num,
+        'faceData.face_list':data.face_list
+      })
+      this.$apply();    
+
+    }
+
+
+    //根据图片真实宽高和缩放比例设置canvas背景图
+    imageLoad(res){
+      let that = this;
+      let path = res.path;
+      let $width=res.width,    //获取图片真实宽度
+          $height=res.height,
+          $rate = (300 / $width);
+      // let real_width = Number(($width * $rate).toFixed(0));
+      // let real_height = Number(($height * $rate).toFixed(0));
+      let real_width = $width * $rate;
+      let real_height = $height * $rate;
+      that.canvas.proportion = $rate;
+      that.canvas.width = real_width;
+      that.canvas.height = real_height;
+      that.canvas.owidth = $width;
+      that.canvas.oheight = $height;
+      that.setData({
+        ['canvas.proportion']:$rate,
+        ['canvas.width'] : real_width,
+        ['canvas.height'] : real_height,
+        ['canvas.owidth'] : $width,
+        ['canvas.oheight'] : $height
+      }) 
+      that.$apply();    
+
+    }
+    showErrMsg(msg){
+      wx.showToast({
+        title: msg,
+        icon:'none'
+      })
+    }
+
+    fakeData(){
+      let that = this;
+      let data={"error_code":0,"error_msg":"SUCCESS","log_id":1594255535650,"timestamp":1530199605,"cached":0,"result":{"face_num":1,"face_list":[
+          {"face_token":"fe4f02f4c012d781dd4e6601cf05d764","location":{"left":661,"top":237,"width":230,"height":220,"rotation":13},"face_probability":1,"angle":{"yaw":9.96204567,"pitch":1.758413553,"roll":33.61511993},"age":63,"beauty":77.00507355,"gender":{"type":"man","probability":0.9999958277}}
+          ,{"face_token":"fe4f02f4c012d781dd4e6601cf05d764","location":{"left":451,"top":210,"width":195,"height":181,"rotation":35},"face_probability":1,"angle":{"yaw":9.96204567,"pitch":1.758413553,"roll":33.61511993},"age":56,"beauty":77.00507355,"gender":{"type":"female","probability":0.9999958277}}
+          ]}}
+
+      that.isAnimation = true;
+      that.setData({
+        isAnimation : true
+      })
+      setTimeout(function(){
+        that.buildData(data.result);
+        that.isAnimation = false;
+        that.setData({
+          isAnimation : false
+        })
+      },3000)
+    }
+
+  }
+  
+</script>
